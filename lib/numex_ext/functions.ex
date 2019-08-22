@@ -10,8 +10,8 @@ defmodule Functions do
 
   defp _reshape2d({y, t}) do
     cond do
-      Np.ndim(y) == 1          -> {Np.reshape(y, 1, Np.size(y)), Np.reshape(t, 1, Np.size(t))}
-      true                     -> {y, t}
+      Np.ndim(y) == 1 -> {Np.reshape(y, 1, Np.size(y)), Np.reshape(t, 1, Np.size(t))}
+      true            -> {y, t}
     end
   end
   defp _reshape_1hot_vec({y, t}) do
@@ -20,7 +20,15 @@ defmodule Functions do
       true                     -> {y, t}
     end
   end
-  defp _cross_entropy_error(y, t) do
-    # TODO
+  defp _cross_entropy_error({y, t}) do
+    {batch_size, _} = y.shape
+    y
+    |> Np.at(Np.arange(batch_size), t)
+    |> List.flatten
+    |> Np.new
+    |> Np.log
+    |> Np.add(1.0e-7)
+    |> Np.sum
+    |> Kernel./(batch_size)
   end
 end

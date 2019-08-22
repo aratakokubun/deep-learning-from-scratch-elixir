@@ -21,8 +21,8 @@ defmodule Deeplearning.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:numexy, "~> 0.1.8"},
-      { :statistics, "~> 0.6.1"}
+      { :statistics, "~> 0.6.1"},
+      {:matrex, "~> 0.6"}
     ]
   end
 end

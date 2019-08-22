@@ -19,6 +19,15 @@ defmodule Np do
   def size(%Array{array: _, shape: {row, nil}}), do: row
   def size(%Array{array: _, shape: {row, col}}), do: row*col
 
+  def c_(mats) do
+    mats
+    |> Stream.map(fn mat -> mat.array end)
+    |> Stream.zip
+    |> Stream.map(&Tuple.to_list/1)
+    |> Enum.to_list
+    |> new
+  end
+
   def arange(n) when is_integer(n), do: arange(0, n)
   def arange(s, e) do
     s..e-1
@@ -32,6 +41,52 @@ defmodule Np do
     |> new
   end
 
+  def repeat(%Array{array: m, shape: _}, times, :row) do
+    m
+    |> Stream.map(fn x -> List.duplicate(x, times) end)
+    |> Enum.reduce(fn (x, acc) -> acc ++ x end)
+  end
+  def repeat(%Array{array: m, shape: {_, col}}, times, :col) when col != nil do
+    m |> Enum.map(fn x -> _repeat_col(x, times) end)
+  end
+  defp _repeat_col(list, times) do
+    list
+    |> Enum.map(fn x -> List.duplicate(x, times) end)
+    |> List.flatten
+  end
+
+  # Sigmoid for matrix
+  def sigmoid(%Array{array: m, shape: {_, col}}) do
+    m |> _apply_chunk(fn v -> 1/(1 + :math.exp(-1 * v)) end, col)
+  end
+
+  # Log for matrix
+  def log(%Array{array: m, shape: {_, col}}) when col != nil do
+    m |> _apply_chunk(&:math.log/1, col)
+  end
+  def log(%Array{array: v, shape: {_, nil}}) do
+    v |> _apply_chunk(&:math.log/1, length(v))
+  end
+
+  # Exp for matrix
+  def exp(%Array{array: m, shape: {_, col}}) when col != nil do
+    m |> _apply_chunk(&:math.exp/1, col)
+  end
+  def exp(%Array{array: v, shape: {_, nil}}) do
+    v |> _apply_chunk(&:math.exp/1, length(v))
+  end
+
+  defp _apply_chunk(list, func, chunk_size) do
+    list
+    |> List.flatten()
+    |> Enum.map(fn val -> func.(val) end)
+    |> Enum.chunk_every(chunk_size)
+    |> new
+  end
+
+  '''
+  Extend original functions for other argument types
+  '''
   # Reshape matrix
   def reshape(mat = %Array{array: arr, shape: _}, target_row, target_col) do
     # TODO: Since we can not call Np.size in guard clause, guard here
@@ -40,9 +95,9 @@ defmodule Np do
       {:error}
     end
     arr
-      |> List.flatten
-      |> Enum.chunk_every(target_col)
-      |> new
+    |> List.flatten
+    |> Enum.chunk_every(target_col)
+    |> new
   end
 
   # Multiply matrix and vector
@@ -52,16 +107,6 @@ defmodule Np do
     Enum.zip(xv,yv)
     |> Enum.map(fn({a,b})->a*b end)
     |> Enum.chunk_every(xm_col)
-    |> new
-  end
-
-  # Replace existing matrix dot from Numexy since chunk size of original function is illegal.
-  def dot(%Array{array: xm, shape: {x_row, x_col}}, %Array{array: ym, shape: {y_row, y_col}}) when x_col == y_row do
-    # matrix * matrix return matrix
-    m = for xi <- xm, yi<-list_transpose(ym), do: [xi, yi]
-    m
-    |> Enum.map(fn([x,y])-> dot_vector(x, y) end)
-    |> Enum.chunk_every(y_col)
     |> new
   end
 
@@ -83,39 +128,98 @@ defmodule Np do
     |> new
   end
 
-  # Sigmoid for matrix
-  def sigmoid(%Array{array: v, shape: {_, v_col}}) do
-    v
-    |> List.flatten()
-    |> Enum.map(&(1/(1+ :math.exp(-1 * &1))))
-    |> Enum.chunk_every(v_col)
+  # Sum for axis
+  def sum(%Array{array: m, shape: _}, :row, true) do
+    m
+    |> _sum(:row)
+    |> (&new([&1])).()
+  end
+  def sum(%Array{array: m, shape: _}, :row, false) do
+    m
+    |> _sum(:row)
+    |> new
+  end
+  def _sum(m, :row) do
+    m
+    |> Stream.zip
+    |> Stream.map(&Tuple.to_list/1)
+    |> Stream.map(&Enum.sum/1)
+    |> Enum.to_list
+  end
+  def sum(%Array{array: m, shape: _}, :col, true) do
+    m
+    |> Enum.map(&Enum.sum/1)
+    |> (&new([&1])).()
+  end
+  def sum(%Array{array: m, shape: _}, :col, false) do
+    m
+    |> Enum.map(&Enum.sum/1)
     |> new
   end
 
-  # Log for matrix
+  '''
+  Replaced function from original
+  '''
+  def dot(%Array{array: xm, shape: {x_row, x_col}}, %Array{array: ym, shape: {y_row, y_col}}) when x_col == y_row do
+    # matrix * matrix return matrix
+    m = for xi <- xm, yi<-list_transpose(ym), do: [xi, yi]
+    m
+    |> Enum.map(fn([x,y])-> dot_vector(x, y) end)
+    |> Enum.chunk_every(y_col)
+    |> new
+  end
+
+  def argmax(%Array{array: v, shape: {_, nil}}) do
+    v
+    |> find_max_value_index
+    |> new
+  end
+
+  def argmax(%Array{array: m, shape: _}) do
+    m
+    |> find_max_value_index
+    |> new
+  end
+  def argmax(%Array{array: m, shape: _}, :row) do
+    m
+    |> Enum.map(&(find_max_value_index(&1)))
+    |> new
+  end
+  def argmax(%Array{array: m, shape: _}, :col) do
+    m
+    |> list_transpose
+    |> Enum.map(&(find_max_value_index(&1)))
+    |> new
+  end
 
   '''
   Custom functions to align with numpy of python.
   '''
-  def at(%Array{array: v, shape: {row, col}}, row_specifier, col_specifier)
-      when col != nil and length(row_specifier) == length(col_specifier)
-           and row >= length(row_specifier)-1 and col >= length(col_specifier)-1 do
-    v
+  def at(mat, %Array{array: row_specifiers, shape: _}, %Array{array: col_specifiers, shape: _}) do
+    at(mat, row_specifiers, col_specifiers)
+  end
+  def at(%Array{array: m, shape: {row, col}}, row_indices, col_indices)
+      when col != nil and length(row_indices) == length(col_indices)
+           and row >= length(row_indices)-1 and col >= length(col_indices)-1 do
+    m
     |> Stream.with_index()
-    |> Stream.filter(fn {_, index} -> Enum.member?(row_specifier, index) end)
+    |> Stream.filter(fn {_, index} -> Enum.member?(row_indices, index) end)
     |> Stream.map(fn {val, _} -> val end)
-    |> Stream.zip(col_specifier)
-    |> Stream.map(fn {values, col} -> IO.inspect({values, col}) end)
-    |> Stream.map(fn {values, col} -> Enum.at(values, col) end)
+    |> Stream.zip(col_indices)
+    |> Stream.map(fn {values, indices} -> _at(values, indices) end)
     |> Enum.to_list()
   end
-  def at(%Array{array: v, shape: {row, nil}}, row_specifier) when row >= length(row_specifier)-1 do
-    v
+  def at(%Array{array: v, shape: {row, nil}}, row_indices) when row >= length(row_indices)-1 do
+    _at(v, row_indices)
+  end
+  def _at(list, indices) when is_list(indices) do
+    list
     |> Stream.with_index()
-    |> Stream.filter(fn {_, index} -> Enum.member?(row_specifier, index) end)
+    |> Stream.filter(fn {_, index} -> Enum.member?(indices, index) end)
     |> Stream.map(fn {val, _} -> val end)
     |> Enum.to_list()
   end
+  def _at(list, index), do: Enum.at(list, index)
 
   @moduledoc """
   Belows are original functions from Numexy
@@ -450,41 +554,6 @@ defmodule Np do
   def get(%Array{array: v, shape: {_, nil}}, {row, nil}), do: Enum.at(v, row - 1)
   def get(%Array{array: m, shape: _}, {row, col}), do: Enum.at(m, row - 1) |> Enum.at(col - 1)
 
-  @doc """
-  Get index of max value.
-
-  ## Examples
-
-      iex> Numexy.new([[1,2,9],[4,5,6]]) |> Numexy.argmax
-      2
-  """
-  def argmax(%Array{array: v, shape: {_, nil}}), do: v |> find_max_value_index
-
-  def argmax(%Array{array: m, shape: _}) do
-    m |> find_max_value_index
-  end
-
-  @doc """
-  Get index of max value row or col.
-
-  ## Examples
-
-      iex> Numexy.new([[1,2,9],[4,6,3]]) |> Numexy.argmax(:row)
-      [2, 1]
-      iex> Numexy.new([[1,2,9],[4,6,3]]) |> Numexy.argmax(:col)
-      [1, 1, 0]
-  """
-  def argmax(%Array{array: m, shape: _}, :row) do
-    m
-    |> Enum.map(&(find_max_value_index(&1)))
-  end
-
-  def argmax(%Array{array: m, shape: _}, :col) do
-    m
-    |> list_transpose
-    |> Enum.map(&(find_max_value_index(&1)))
-  end
-
   defp find_max_value_index(list) do
     flat_list = List.flatten(list)
     max_value = Enum.max(flat_list)
@@ -584,4 +653,3 @@ defmodule Np do
     |> new
   end
 end
-

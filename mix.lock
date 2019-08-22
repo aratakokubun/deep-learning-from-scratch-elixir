@@ -1,4 +1,6 @@
 %{
+  "elixir_make": {:hex, :elixir_make, "0.6.0", "38349f3e29aff4864352084fc736fa7fa0f2995a819a737554f7ebd28b85aaab", [:mix], [], "hexpm"},
+  "matrex": {:hex, :matrex, "0.6.7", "cbbd65b58b333e456681c345e009b637b7d40cdb38b7fae3ceee407fa8e69321", [:make], [{:elixir_make, "~> 0.4", [hex: :elixir_make, repo: "hexpm", optional: false]}], "hexpm"},
   "numexy": {:hex, :numexy, "0.1.8", "040f77261fdf8e07e2bb30fa90b5c99de4d72a1e46d020045d1a9c7735d0a4dd", [:mix], [], "hexpm"},
   "statistics": {:hex, :statistics, "0.6.1", "dd8a400984bc3f223ff1b0f3dcdf193d3ec3a755bc810a7b08eadd8021516399", [:mix], [], "hexpm"},
 }
