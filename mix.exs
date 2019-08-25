@@ -21,8 +21,10 @@ defmodule Deeplearning.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      { :statistics, "~> 0.6.1"},
-      {:matrex, "~> 0.6"}
+      {:matrex, "~> 0.6.0", override: true},
+      {:expyplot, "~> 1.2.2", override: true},
+      {:earmark, "~> 1.3.2", override: true},
+      {:ex_doc, "~> 0.20.2", override: true},
     ]
   end
 end

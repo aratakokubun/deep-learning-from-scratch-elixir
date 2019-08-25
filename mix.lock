@@ -1,6 +1,11 @@
 %{
+  "earmark": {:hex, :earmark, "1.3.5", "0db71c8290b5bc81cb0101a2a507a76dca659513984d683119ee722828b424f6", [:mix], [], "hexpm"},
   "elixir_make": {:hex, :elixir_make, "0.6.0", "38349f3e29aff4864352084fc736fa7fa0f2995a819a737554f7ebd28b85aaab", [:mix], [], "hexpm"},
+  "ex_doc": {:hex, :ex_doc, "0.20.2", "1bd0dfb0304bade58beb77f20f21ee3558cc3c753743ae0ddbb0fd7ba2912331", [:mix], [{:earmark, "~> 1.3", [hex: :earmark, repo: "hexpm", optional: false]}, {:makeup_elixir, "~> 0.10", [hex: :makeup_elixir, repo: "hexpm", optional: false]}], "hexpm"},
+  "expyplot": {:hex, :expyplot, "1.2.2", "ae39e7d230de0c8986863463436558306496fcac681d8e53d046e11a75a7a9d2", [:mix], [{:earmark, "~> 0.1", [hex: :earmark, repo: "hexpm", optional: false]}, {:ex_doc, "~> 0.11", [hex: :ex_doc, repo: "hexpm", optional: false]}, {:statistics, "~> 0.4.1", [hex: :statistics, repo: "hexpm", optional: false]}], "hexpm"},
+  "makeup": {:hex, :makeup, "1.0.0", "671df94cf5a594b739ce03b0d0316aa64312cee2574b6a44becb83cd90fb05dc", [:mix], [{:nimble_parsec, "~> 0.5.0", [hex: :nimble_parsec, repo: "hexpm", optional: false]}], "hexpm"},
+  "makeup_elixir": {:hex, :makeup_elixir, "0.14.0", "cf8b7c66ad1cff4c14679698d532f0b5d45a3968ffbcbfd590339cb57742f1ae", [:mix], [{:makeup, "~> 1.0", [hex: :makeup, repo: "hexpm", optional: false]}], "hexpm"},
   "matrex": {:hex, :matrex, "0.6.7", "cbbd65b58b333e456681c345e009b637b7d40cdb38b7fae3ceee407fa8e69321", [:make], [{:elixir_make, "~> 0.4", [hex: :elixir_make, repo: "hexpm", optional: false]}], "hexpm"},
-  "numexy": {:hex, :numexy, "0.1.8", "040f77261fdf8e07e2bb30fa90b5c99de4d72a1e46d020045d1a9c7735d0a4dd", [:mix], [], "hexpm"},
-  "statistics": {:hex, :statistics, "0.6.1", "dd8a400984bc3f223ff1b0f3dcdf193d3ec3a755bc810a7b08eadd8021516399", [:mix], [], "hexpm"},
+  "nimble_parsec": {:hex, :nimble_parsec, "0.5.1", "c90796ecee0289dbb5ad16d3ad06f957b0cd1199769641c961cfe0b97db190e0", [:mix], [], "hexpm"},
+  "statistics": {:hex, :statistics, "0.4.1", "e9bfe6649f70842d9ebce69aa31ac8b6928e096bde43b683d7d673057237d028", [:mix], [], "hexpm"},
 }
