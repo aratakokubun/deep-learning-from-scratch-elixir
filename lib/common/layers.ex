@@ -1,4 +1,5 @@
 import Matrex
+import MatrexUtils
 
 defmodule Param do
   defstruct w: nil, b: nil
@@ -29,7 +30,7 @@ defmodule Affine do
     %Grad{
       dx: Matrex.dot_nt(dout, weight),
       dw: Matrex.dot_tn(x, dout),
-      db: dout
+      db: MatrexUtils.sum(dout, :rows)
     }
   end
 end

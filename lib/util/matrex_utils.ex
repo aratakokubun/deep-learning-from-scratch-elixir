@@ -135,6 +135,23 @@ defmodule MatrexUtils do
     <<rows::unsigned-integer-little-32,
       columns::unsigned-integer-little-32,
       body::binary>> = x.data
+    new_body = 1..columns
+               |> Stream.map(
+                    fn col_index -> 1..rows
+                                    |> Stream.map(fn row_index -> _parse_binary(rows, columns, body, row_index, col_index) end)
+                                    |> Stream.map(fn <<val::float-little-32>> -> val end)
+                                    |> Enum.sum()
+                    end)
+               |> Enum.reduce(<<>>, fn val, acc -> acc <> <<val::float-little-32>> end)
+    %Matrex{data: <<1::unsigned-integer-little-32,
+              columns::unsigned-integer-little-32,
+              new_body::binary>>}
+  end
+
+  def sum(%Matrex{} = x, :columns) do
+    <<rows::unsigned-integer-little-32,
+      columns::unsigned-integer-little-32,
+      body::binary>> = x.data
     new_body = 1..rows
                |> Stream.map(
                     fn row_index -> 1..columns
@@ -142,14 +159,10 @@ defmodule MatrexUtils do
                                     |> Stream.map(fn <<val::float-little-32>> -> val end)
                                     |> Enum.sum()
                     end)
-               |> Enum.reduce(fn binary, acc -> acc <> binary end)
-    %Matrex{data: <<1::unsigned-integer-little-32,
-              columns::unsigned-integer-little-32,
+               |> Enum.reduce(<<>>, fn val, acc -> acc <> <<val::float-little-32>> end)
+    %Matrex{data: <<rows::unsigned-integer-little-32,
+              1::unsigned-integer-little-32,
               new_body::binary>>}
-  end
-
-  def sum(%Matrex{} = x, :columns) do
-    # TODO
   end
 
   @doc """
