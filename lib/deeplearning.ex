@@ -1,18 +1,15 @@
 defmodule Deeplearning do
-  @moduledoc """
-  Documentation for Deeplearning.
-  """
+  use Application
+  import ParamStore
 
-  @doc """
-  Hello world.
+  def start(_type, _args) do
+    import Supervisor.Spec, warn: false
 
-  ## Examples
+    children = [
+      worker(ParamStore, [])
+    ]
 
-      iex> Deeplearning.hello()
-      :world
-
-  """
-  def hello do
-    :world
+    opts = [strategy: :one_for_one, name: ParamStore]
+    Supervisor.start_link(children, opts)
   end
 end
