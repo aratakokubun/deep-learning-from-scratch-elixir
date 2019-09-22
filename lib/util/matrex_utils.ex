@@ -1,5 +1,5 @@
 defmodule MatrexUtils do
-  import Matrex
+  require Matrex
   @binary_per_data 4
 
   @doc """
@@ -102,7 +102,7 @@ defmodule MatrexUtils do
          target_columns
        ) when rem(target_columns, columns) == 0 do
     new_body = 1..rows
-               |> Stream.map(fn index -> _parse_binary(rows, columns, body, index) end)
+               |> Stream.map(fn index -> _parse_binary(columns, body, index) end)
                |> Stream.map(
                     fn binary -> binary
                                  |> List.duplicate(Kernel.div(target_columns, columns))
@@ -138,7 +138,7 @@ defmodule MatrexUtils do
     new_body = 1..columns
                |> Stream.map(
                     fn col_index -> 1..rows
-                                    |> Stream.map(fn row_index -> _parse_binary(rows, columns, body, row_index, col_index) end)
+                                    |> Stream.map(fn row_index -> _parse_binary(columns, body, row_index, col_index) end)
                                     |> Stream.map(fn <<val::float-little-32>> -> val end)
                                     |> Enum.sum()
                     end)
@@ -155,7 +155,7 @@ defmodule MatrexUtils do
     new_body = 1..rows
                |> Stream.map(
                     fn row_index -> 1..columns
-                                    |> Stream.map(fn col_index -> _parse_binary(rows, columns, body, row_index, col_index) end)
+                                    |> Stream.map(fn col_index -> _parse_binary(columns, body, row_index, col_index) end)
                                     |> Stream.map(fn <<val::float-little-32>> -> val end)
                                     |> Enum.sum()
                     end)
@@ -169,21 +169,21 @@ defmodule MatrexUtils do
     Fetch data of specified list of rows and compose them to Matrex.
   """
   def fetch(%Matrex{} = x, [_| _] = row_indices) do
-    <<rows::unsigned-integer-little-32,
+    <<_::unsigned-integer-little-32,
              columns::unsigned-integer-little-32,
              body::binary>> = x.data
     new_body = row_indices
-               |> Enum.map(fn index -> _parse_binary(rows, columns, body, index) end)
+               |> Enum.map(fn index -> _parse_binary(columns, body, index) end)
                |> Enum.reduce(<<>>, fn binary, acc -> acc <> binary end)
     %Matrex{data: <<length(row_indices)::unsigned-integer-little-32,
                     columns::unsigned-integer-little-32,
                     new_body::binary>>}
   end
 
-  defp _parse_binary(rows, columns, body, row_index) do
+  defp _parse_binary(columns, body, row_index) do
     binary_part(body, (row_index - 1) * columns * @binary_per_data, columns * @binary_per_data)
   end
-  defp _parse_binary(rows, columns, body, row_index, col_index) do
+  defp _parse_binary(columns, body, row_index, col_index) do
     binary_part(body, ((row_index - 1) * columns + col_index - 1) * @binary_per_data, @binary_per_data)
   end
 end

@@ -1,5 +1,5 @@
-import Matrex
-import MatrexUtils
+require Matrex
+require MatrexUtils
 
 defmodule Param do
   defstruct w: nil, b: nil
@@ -13,9 +13,9 @@ defmodule Sigmoid do
   def forward(%Matrex{} = x) do
     Matrex.apply(x, :sigmoid)
   end
-  def backward(%Matrex{} = x, %Matrex{} = out, %Matrex{} = dout) do
+  def backward(%Matrex{} = out, %Matrex{} = dout) do
     dout
-    |> Matrex.multiply(Matrex.subtract(1, out))
+    |> Matrex.multiply(Matrex.subtract(1.0, out))
     |> Matrex.multiply(out)
     |> (&%Grad{dx: &1}).()
   end
@@ -43,12 +43,16 @@ defmodule SoftmaxWithLoss do
     h = Matrex.apply(x, :sigmoid)
 
     loss = y
-           |> Matrex.multiply(Matrex.apply(h, :log))
+           |> Matrex.multiply(
+                h
+                |> Matrex.add(1.0e-7)
+                |> Matrex.apply(:log))
            |> Matrex.neg()
            |> Matrex.subtract(
                 Matrex.subtract(1, y)
                 |> Matrex.multiply(
                      Matrex.subtract(1, h)
+                     |> Matrex.add(1.0e-7)
                      |> Matrex.apply(:log)
                    )
               )
@@ -57,7 +61,7 @@ defmodule SoftmaxWithLoss do
     %{out: h, loss: loss}
   end
 
-  def backward(%Matrex{} = x, %Matrex{} = y, %Matrex{} = out, dout \\ 1.0) do
+  def backward(%Matrex{} = y, %Matrex{} = out, dout \\ 1.0) do
     batch_size = y[:rows]
     dx = out
          |> Matrex.subtract(y)
@@ -88,7 +92,6 @@ defmodule SoftmaxWithLossLeguralize do
     %{out: h, loss: loss}
   end
 
-  defp _regularize(:nan, _, _), do: :nan
   defp _regularize(sum_diffs, %Matrex{} = weight, batch_size, lambda), do: sum_diffs / batch_size + _regularization(weight, batch_size, lambda)
 
   defp _regularization(%Matrex{} = weight, batch_size, lambda) do
@@ -100,11 +103,11 @@ defmodule SoftmaxWithLossLeguralize do
     |> Kernel.*(lambda / (2 * batch_size))
   end
 
-  def backward(%Matrex{} = x, %Matrex{} = y, %Param{w: weight}, %Matrex{} = out, lambda) do
+  def backward(%Matrex{} = x, %Matrex{} = y, %Param{w: weight}, lambda) do
     batch_size = y[:rows]
     l = Matrex.ones(weight[:rows], weight[:cols])
         |> Matrex.set(1, 1, 0)
-    dx = Matrex.subtract(out, y)
+    dx = Matrex.subtract(x, y)
     x
     |> Matrex.dot_tn(dx)
     |> Matrex.add(Matrex.multiply(weight, l), 1.0, lambda)

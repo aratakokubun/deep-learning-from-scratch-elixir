@@ -1,8 +1,8 @@
 defmodule Sgd do
-  import Param
-  import Grad
-  import Matrex
-  import MatrexUtils
+  require Param
+  require Grad
+  require Matrex
+  require MatrexUtils
 
   def optimize(%{} = params, %{} = grads, lr) do
     cond do
@@ -13,30 +13,21 @@ defmodule Sgd do
   defp _optimize(%{} = params, %{} = grads, lr) do
     Stream.zip(params, grads)
     |> Stream.map(fn {{key, p}, {key, g}} -> {key, _optimize_each(p, g, lr)} end)
-    |> Enum.to_list
+    |> Map.new
   end
-  defp _optimize_each(nil, nil, lr) do
+  defp _optimize_each(%Param{w: nil, b: nil}, %Grad{dx: _, dw: nil, db: nil}, _) do
     %Param{w: nil, b: nil}
   end
   defp _optimize_each(%Param{w: w, b: nil}, %Grad{dx: _, dw: dw, db: nil}, lr) do
     %Param{
-      w: Matrex.subtract(w,
-        dw
-        |> MatrexUtils.broad_cast(:columns, w[:rows])
-        |> Matrex.multiply(lr)),
+      w: Matrex.subtract(w, Matrex.multiply(dw, lr)),
       b: nil
     }
   end
   defp _optimize_each(%Param{w: w, b: b}, %Grad{dx: _, dw: dw, db: db}, lr) do
     %Param{
-      w: Matrex.subtract(w,
-        dw
-        |> MatrexUtils.broad_cast(:columns, w[:rows])
-        |> Matrex.multiply(lr)),
-      b: Matrex.subtract(b,
-        dw
-        |> MatrexUtils.broad_cast(:columns, b[:rows])
-        |> Matrex.multiply(lr))
+      w: Matrex.subtract(w, Matrex.multiply(dw, lr)),
+      b: Matrex.subtract(b, Matrex.multiply(db, lr))
     }
   end
 end

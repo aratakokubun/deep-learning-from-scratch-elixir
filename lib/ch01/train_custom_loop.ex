@@ -1,18 +1,18 @@
 defmodule TrainCustomLoop do
-  import TwoLayerNet
-  import Sgd
-  import Param
+  require TwoLayerNet
+  require Sgd
+  require Param
 
-  import Spiral
-  import ParamStore
-  import MatrexUtils
-  import Expyplot.Plot
+  require Spiral
+  require ParamStore
+  require MatrexUtils
+  require Expyplot.Plot
 
   @param_key    :ch01_neural_net_param
   @loss_key     :ch01_neural_net_loss
 
   def main do
-    max_epoch     = 100
+    max_epoch     = 300
     batch_size    = 30
     hidden_size   = 10
     learning_rate = 1.0
@@ -33,15 +33,15 @@ defmodule TrainCustomLoop do
     ParamStore.store(@param_key,
       %{
         layer1: %Param{
-          w: Matrex.random(2, hidden_size),
+          w: Matrex.random(2, hidden_size) |> Matrex.multiply(0.01),
           b: Matrex.zeros(1, hidden_size)
         },
-        layer2: nil,
+        layer2: %Param{},
         layer3: %Param{
-          w: Matrex.random(hidden_size, 3),
+          w: Matrex.random(hidden_size, 3) |> Matrex.multiply(0.01),
           b: Matrex.zeros(1, 3)
         },
-        layer4: nil,
+        layer4: %Param{},
       })
     ParamStore.store(@loss_key, %{total_loss: 0, loss_count: 0, avg_losses: []})
 
@@ -56,14 +56,14 @@ defmodule TrainCustomLoop do
     t = MatrexUtils.fetch(ts, idx)
 
     # Note: We can not use Stream since calculations must be done 1 by 1
-    0..max_iters-1
-    |> Enum.map(fn iter -> {iter, 1 + iter*batch_size, (iter+1)*batch_size} end)
+    1..max_iters
+    |> Enum.map(fn iter -> {iter, 1 + (iter-1)*batch_size, iter*batch_size} end)
     |> Enum.map(fn {iter, s, e} -> {iter, x[s..e], t[s..e]} end)
     |> Enum.each(fn {iter, batch_x, batch_y} -> _batch(batch_x, batch_y, lr, epoch, iter, max_iters) end)
   end
 
   defp _batch(%Matrex{} = batch_x, %Matrex{} = batch_y, lr, epoch, iter, max_iter)
-       when rem(iter + 1, 10) == 0 do
+       when rem(iter, 10) == 0 do
     _batch_operation(batch_x, batch_y, lr)
     _batch_output(epoch, iter, max_iter)
   end
@@ -76,9 +76,8 @@ defmodule TrainCustomLoop do
     loss    = ParamStore.lookup(@loss_key)
 
     forward_out = TwoLayerNet.predict(batch_x, batch_y, params)
-    grads       = TwoLayerNet.back_propagate(batch_x, batch_y, params, forward_out)
+    grads       = TwoLayerNet.back_propagate(batch_x, batch_y, params, forward_out[:outs])
     {:ok, optimized} = Sgd.optimize(params, grads, lr)
-
 
     ParamStore.store(@param_key, optimized)
     ParamStore.store(@loss_key,
