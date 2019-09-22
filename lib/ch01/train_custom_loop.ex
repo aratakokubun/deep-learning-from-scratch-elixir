@@ -2,6 +2,7 @@ defmodule TrainCustomLoop do
   require TwoLayerNet
   require Sgd
   require Param
+  require Plotter
 
   require Spiral
   require ParamStore
@@ -12,7 +13,7 @@ defmodule TrainCustomLoop do
   @loss_key     :ch01_neural_net_loss
 
   def main do
-    max_epoch     = 300
+    max_epoch     = 1000
     batch_size    = 30
     hidden_size   = 10
     learning_rate = 1.0
@@ -23,9 +24,6 @@ defmodule TrainCustomLoop do
     # Variable for learning
     data_size   = xs[:rows]
     max_iters   = Kernel.div(data_size, batch_size)
-    total_loss  = 0
-    loss_count  = 0
-    loss_list   = []
 
     # Initialize parameters and losses.
     # Ignore whether or not store already started.
@@ -48,6 +46,10 @@ defmodule TrainCustomLoop do
     # Note: We can not use Stream since calculations must be done 1 by 1
     1..max_epoch
     |> Enum.each(fn epoch -> _epoch(xs, ts, batch_size, learning_rate, epoch, max_iters) end)
+
+    params = ParamStore.lookup(@param_key)
+    loss = ParamStore.lookup(@loss_key)
+    Plotter.plot(xs, ts, params, loss[:avg_losses])
   end
 
   defp _epoch(%Matrex{} = xs, %Matrex{} = ts, batch_size, lr, epoch, max_iters) do
@@ -75,7 +77,7 @@ defmodule TrainCustomLoop do
     params  = ParamStore.lookup(@param_key)
     loss    = ParamStore.lookup(@loss_key)
 
-    forward_out = TwoLayerNet.predict(batch_x, batch_y, params)
+    forward_out = TwoLayerNet.feed_forward(batch_x, batch_y, params)
     grads       = TwoLayerNet.back_propagate(batch_x, batch_y, params, forward_out[:outs])
     {:ok, optimized} = Sgd.optimize(params, grads, lr)
 
@@ -86,7 +88,7 @@ defmodule TrainCustomLoop do
   defp _batch_output(epoch, iter, max_iter) do
     %{total_loss: total_loss, loss_count: loss_count, avg_losses: avg_losses} = ParamStore.lookup(@loss_key)
     avg_loss = total_loss / loss_count
-    IO.puts("| epoch #{epoch} | iter #{iter} / #{max_iter} | loss #{Float.round(avg_loss)}")
+    IO.puts("| epoch #{epoch} | iter #{iter} / #{max_iter} | loss #{avg_loss}")
     ParamStore.store(@loss_key, %{total_loss: 0, loss_count: 0, avg_losses: avg_losses ++ [avg_loss]})
   end
 end

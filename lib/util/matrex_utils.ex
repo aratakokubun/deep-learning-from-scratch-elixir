@@ -10,13 +10,11 @@ defmodule MatrexUtils do
   def _add(
         %Matrex{
           data:
-            <<rows::unsigned-integer-little-32, columns::unsigned-integer-little-32,
-              _data1::binary>>
+            <<rows::unsigned-integer-little-32, columns::unsigned-integer-little-32, _data1::binary>>
         } = first,
         %Matrex{
           data:
-            <<rows::unsigned-integer-little-32, columns::unsigned-integer-little-32,
-              _data2::binary>>
+            <<rows::unsigned-integer-little-32, columns::unsigned-integer-little-32, _data2::binary>>
         } = second,
         alpha,
         beta
@@ -24,13 +22,11 @@ defmodule MatrexUtils do
   def _add(
         %Matrex{
           data:
-            <<rows::unsigned-integer-little-32, columns1::unsigned-integer-little-32,
-              _data1::binary>>
+            <<rows::unsigned-integer-little-32, columns1::unsigned-integer-little-32, _data1::binary>>
         } = first,
         %Matrex{
           data:
-            <<rows::unsigned-integer-little-32, columns2::unsigned-integer-little-32,
-              _data2::binary>>
+            <<rows::unsigned-integer-little-32, columns2::unsigned-integer-little-32, _data2::binary>>
         } = second,
         alpha,
         beta
@@ -42,13 +38,11 @@ defmodule MatrexUtils do
   def _add(
         %Matrex{
           data:
-            <<rows::unsigned-integer-little-32, columns1::unsigned-integer-little-32,
-              _data1::binary>>
+            <<rows::unsigned-integer-little-32, columns1::unsigned-integer-little-32, _data1::binary>>
         } = first,
         %Matrex{
           data:
-            <<rows::unsigned-integer-little-32, columns2::unsigned-integer-little-32,
-              _data2::binary>>
+            <<rows::unsigned-integer-little-32, columns2::unsigned-integer-little-32, _data2::binary>>
         } = second,
         alpha,
         beta
@@ -60,13 +54,11 @@ defmodule MatrexUtils do
   def _add(
         %Matrex{
           data:
-            <<rows1::unsigned-integer-little-32, columns::unsigned-integer-little-32,
-              _data1::binary>>
+            <<rows1::unsigned-integer-little-32, columns::unsigned-integer-little-32, _data1::binary>>
         } = first,
         %Matrex{
           data:
-            <<rows2::unsigned-integer-little-32, columns::unsigned-integer-little-32,
-              _data2::binary>>
+            <<rows2::unsigned-integer-little-32, columns::unsigned-integer-little-32, _data2::binary>>
         } = second,
         alpha,
         beta
@@ -78,13 +70,11 @@ defmodule MatrexUtils do
   def _add(
         %Matrex{
           data:
-            <<rows1::unsigned-integer-little-32, columns::unsigned-integer-little-32,
-              _data1::binary>>
+            <<rows1::unsigned-integer-little-32, columns::unsigned-integer-little-32, _data1::binary>>
         } = first,
         %Matrex{
           data:
-            <<rows2::unsigned-integer-little-32, columns::unsigned-integer-little-32,
-              _data2::binary>>
+            <<rows2::unsigned-integer-little-32, columns::unsigned-integer-little-32, _data2::binary>>
         } = second,
         alpha,
         beta
@@ -185,5 +175,44 @@ defmodule MatrexUtils do
   end
   defp _parse_binary(columns, body, row_index, col_index) do
     binary_part(body, ((row_index - 1) * columns + col_index - 1) * @binary_per_data, @binary_per_data)
+  end
+
+  @doc """
+  Create a mesh grid 2d array in the rectangle.
+  """
+  def meshgrid([_| _] = x_range, [_| _] = y_range) do
+    {
+      List.duplicate(x_range, length(y_range)),
+      y_range |> Enum.map(fn elem -> List.duplicate(elem, length(x_range)) end)
+    }
+  end
+
+  @doc """
+  Create a list in the range with the step.
+  """
+  def arrange(s, e, step) when s < e do
+    Stream.iterate(s, &(&1 + step))
+    |> Enum.take(Kernel.trunc((e - s) / step))
+  end
+
+  @doc """
+  Return argmax for row/column indices.
+  """
+  def argmax(%Matrex{} = x, :rows) do
+    1..x[:columns]
+    |> Enum.map(fn column_index -> Matrex.column(x, column_index)[:argmax] end)
+  end
+  def argmax(%Matrex{} = x, :columns) do
+    1..x[:rows]
+    |> Enum.map(fn row_index -> x[row_index][:argmax] end)
+  end
+
+  @doc """
+  Create a matrex of flattened list.
+  """
+  def flattened([_ | _] = list) do
+    list
+    |> List.flatten()
+    |> (&Matrex.reshape(&1, length(&1), 1)).()
   end
 end

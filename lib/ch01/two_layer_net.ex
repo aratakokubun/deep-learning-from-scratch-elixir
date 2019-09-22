@@ -6,8 +6,10 @@ defmodule TwoLayerNet do
   require Param
   require Grad
 
-  def predict(%Matrex{} = x, %Matrex{} = y, params) do
-    feed_forward(x, y, params)
+  def predict(%Matrex{} = x, %{layer1: param1, layer2: _, layer3: param3, layer4: _}) do
+    Affine.forward(x, param1)
+    |> Sigmoid.forward()
+    |> Affine.forward(param3)
   end
 
   def feed_forward(%Matrex{} = x, %Matrex{} = y, %{layer1: param1, layer2: _, layer3: param3, layer4: _}) do
@@ -20,7 +22,7 @@ defmodule TwoLayerNet do
 
   def back_propagate(%Matrex{} = x, %Matrex{} = y,
         %{layer1: param1, layer2: _,    layer3: param3, layer4: _   },
-        %{layer1: out1,   layer2: out2, layer3: out3,   layer4: out4},
+        %{layer1: _,      layer2: out2, layer3: _,      layer4: out4},
         dout \\ 1.0) do
     grad4 = %Grad{dx: dout4, dw: _, db: _} = SoftmaxWithLoss.backward(y, out4, dout)
     grad3 = %Grad{dx: dout3, dw: _, db: _} = Affine.backward(out2, param3, dout4)
