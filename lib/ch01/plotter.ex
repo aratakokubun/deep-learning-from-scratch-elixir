@@ -6,9 +6,9 @@ defmodule Plotter do
   require Expyplot.Plot
   require ShowSpiral
 
-  def plot(%Matrex{} = xs, %Matrex{} = ts, params, [_|_] = loss_list) do
+  def plot(%Matrex{} = xs, params, [_|_] = loss_list) do
     plot_learning_curve(loss_list)
-    plot_boundary(xs, ts, params)
+    plot_boundary(xs, params)
   end
 
   def plot_learning_curve([_|_] = loss_list) do
@@ -18,7 +18,7 @@ defmodule Plotter do
     Expyplot.Plot.show()
   end
 
-  def plot_boundary(%Matrex{} = xs, %Matrex{} = ts, params) do
+  def plot_boundary(%Matrex{} = xs, params) do
     h = 0.01
     {x_min, x_max} = {Matrex.column(xs, 1)[:min] - 0.1, Matrex.column(xs, 1)[:max] + 0.1}
     {y_min, y_max} = {Matrex.column(xs, 2)[:min] - 0.1, Matrex.column(xs, 2)[:max] + 0.1}
@@ -28,7 +28,7 @@ defmodule Plotter do
     predict_cls = MatrexUtils.argmax(score, :columns)
     z = Matrex.reshape(Matrex.new([predict_cls]), length(xx), Kernel.div(length(predict_cls), length(xx)))
     Expyplot.Plot.contourf([xx, yy, Matrex.to_list_of_lists(z)])
-    # TODO: Corresponding function for plt.axis("plt.axis")?
+    # TODO: Corresponding function for plt.axis("off")?
     ShowSpiral.plot()
   end
 end

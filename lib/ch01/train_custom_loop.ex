@@ -49,7 +49,7 @@ defmodule TrainCustomLoop do
 
     params = ParamStore.lookup(@param_key)
     loss = ParamStore.lookup(@loss_key)
-    Plotter.plot(xs, ts, params, loss[:avg_losses])
+    Plotter.plot(xs, params, loss[:avg_losses])
   end
 
   defp _epoch(%Matrex{} = xs, %Matrex{} = ts, batch_size, lr, epoch, max_iters) do
