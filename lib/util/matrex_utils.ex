@@ -213,6 +213,7 @@ defmodule MatrexUtils do
   def flattened([_ | _] = list) do
     list
     |> List.flatten()
-    |> (&Matrex.reshape(&1, length(&1), 1)).()
+    |> (&Matrex.new([&1])).()
+    |> Matrex.transpose()
   end
 end
