@@ -92,13 +92,12 @@ defmodule MatrexUtils do
          target_columns
        ) when rem(target_columns, columns) == 0 do
     new_body = 1..rows
-               |> Stream.map(fn index -> _parse_binary(columns, body, index) end)
-               |> Stream.map(
-                    fn binary -> binary
-                                 |> List.duplicate(Kernel.div(target_columns, columns))
-                                 |> Enum.reduce(fn new, acc -> acc <> new end)
+               |> Enum.map(
+                    fn index -> _parse_binary(columns, body, index)
+                                |> List.duplicate(Kernel.div(target_columns, columns))
+                                |> :erlang.list_to_binary()
                     end)
-               |> Enum.reduce(fn new, acc -> acc <> new end)
+               |> :erlang.list_to_binary()
     %Matrex{data: <<rows::unsigned-integer-little-32,
               target_columns::unsigned-integer-little-32,
               new_body::binary>>}
@@ -112,7 +111,7 @@ defmodule MatrexUtils do
        ) when rem(target_rows, rows) == 0 do
     new_body = body
                |> List.duplicate(Kernel.div(target_rows, rows))
-               |> Enum.reduce(fn new, acc -> acc <> new end)
+               |> :erlang.list_to_binary()
     %Matrex{data: <<target_rows::unsigned-integer-little-32,
               columns::unsigned-integer-little-32,
               new_body::binary>>}
@@ -126,13 +125,14 @@ defmodule MatrexUtils do
       columns::unsigned-integer-little-32,
       body::binary>> = x.data
     new_body = 1..columns
-               |> Stream.map(
+               |> Enum.map(
                     fn col_index -> 1..rows
                                     |> Stream.map(fn row_index -> _parse_binary(columns, body, row_index, col_index) end)
                                     |> Stream.map(fn <<val::float-little-32>> -> val end)
                                     |> Enum.sum()
+                                    |> (&<<&1::float-little-32>>).()
                     end)
-               |> Enum.reduce(<<>>, fn val, acc -> acc <> <<val::float-little-32>> end)
+               |> :erlang.list_to_binary()
     %Matrex{data: <<1::unsigned-integer-little-32,
               columns::unsigned-integer-little-32,
               new_body::binary>>}
@@ -143,13 +143,14 @@ defmodule MatrexUtils do
       columns::unsigned-integer-little-32,
       body::binary>> = x.data
     new_body = 1..rows
-               |> Stream.map(
+               |> Enum.map(
                     fn row_index -> 1..columns
                                     |> Stream.map(fn col_index -> _parse_binary(columns, body, row_index, col_index) end)
                                     |> Stream.map(fn <<val::float-little-32>> -> val end)
                                     |> Enum.sum()
+                                    |> (&<<&1::float-little-32>>).()
                     end)
-               |> Enum.reduce(<<>>, fn val, acc -> acc <> <<val::float-little-32>> end)
+               |> :erlang.list_to_binary()
     %Matrex{data: <<rows::unsigned-integer-little-32,
               1::unsigned-integer-little-32,
               new_body::binary>>}
@@ -164,7 +165,7 @@ defmodule MatrexUtils do
              body::binary>> = x.data
     new_body = row_indices
                |> Enum.map(fn index -> _parse_binary(columns, body, index) end)
-               |> Enum.reduce(<<>>, fn binary, acc -> acc <> binary end)
+               |> :erlang.list_to_binary()
     %Matrex{data: <<length(row_indices)::unsigned-integer-little-32,
                     columns::unsigned-integer-little-32,
                     new_body::binary>>}
