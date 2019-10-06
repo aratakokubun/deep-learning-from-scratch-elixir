@@ -214,7 +214,14 @@ defmodule MatrexUtils do
   def flattened([_ | _] = list) do
     list
     |> List.flatten()
-    |> (&Matrex.new([&1])).()
+    |> new()
     |> Matrex.transpose()
+  end
+
+  @doc """
+  Create a matrex braced with []
+  """
+  def new([head | _] = list) when is_number(head) do
+    Matrex.new([list])
   end
 end
