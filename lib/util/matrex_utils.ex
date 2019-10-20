@@ -1,4 +1,8 @@
 defmodule MatrexUtils do
+  @moduledoc """
+  Utility functions to supplement Matrex.
+  """
+
   require Matrex
   @binary_per_data 4
 
@@ -223,5 +227,19 @@ defmodule MatrexUtils do
   """
   def new([head | _] = list) when is_number(head) do
     Matrex.new([list])
+  end
+
+  @doc """
+  Normalize matrex with L2 norm, that is sqrt sum of squared all elements.
+  """
+  def l2_normalize(%Matrex{} = x, eps \\ 1.0e-8) do
+    Matrex.divide(x, _l2norm(x) + eps)
+  end
+
+  def _l2norm(%Matrex{} = x) do
+    x
+    |> Matrex.square()
+    |> Matrex.sum()
+    |> :math.sqrt()
   end
 end

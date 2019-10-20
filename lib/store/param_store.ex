@@ -1,4 +1,8 @@
 defmodule ParamStore do
+  @moduledoc """
+  OTP Server to store learning parameters.
+  """
+
   use GenServer
 
   def init(state), do: {:ok, state}

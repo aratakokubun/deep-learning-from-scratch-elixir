@@ -32,21 +32,36 @@ defmodule Util do
   end
 
   def create_co_matrix(corpus, vocab_size, window_size \\ 1) do
-    corpus_size = corpus[:rows]
+    corpus_size = corpus[:cols]
     co_matrix = Matrex.zeros({vocab_size, vocab_size})
     corpus
     |> Enum.with_index()
     |> Enum.reduce(
         co_matrix,
-        fn ({word_id, index}, acc) -> _to_word_vec(acc, window_size, corpus_size, Kernel.trunc(word_id), index+1) end)
+        # Note: Matrex manages variables as float so that the word id must be trunc to integer here.
+        fn ({word_id, index}, acc) ->
+          _create_co_row(acc, corpus, Kernel.trunc(word_id), index + 1, window_size, corpus_size) end)
   end
 
-  defp _to_word_vec(co_matrix, window_size, corpus_size, word_id, idx) do
+  defp _create_co_row(co_matrix, corpus, word_id, word_index, window_size, corpus_size) do
     -window_size..window_size
-    |> Enum.reduce(co_matrix, fn (index, acc) -> _to_co(acc, window_size, corpus_size, word_id, idx, idx + index) end)
+    |> Enum.reduce(
+         co_matrix,
+         fn (index_diff, acc) -> _create_co_cell(acc, corpus, word_id, word_index, word_index + index_diff, corpus_size) end)
   end
-  defp _to_co(co_matrix, window_size, corpus_size, word_id, idx, window_idx)
-       when window_idx < 1 or corpus_size < window_idx or window_idx == idx, do: co_matrix
-  defp _to_co(co_matrix, window_size, corpus_size, word_id, idx, window_idx),
-       do: Matrex.set(co_matrix, word_id, window_idx, co_matrix[word_id][window_idx] + 1)
+  defp _create_co_cell(co_matrix, _, _, word_index, window_index, corpus_size)
+       when window_index < 1 or corpus_size <= window_index or window_index == word_index, do: co_matrix
+  defp _create_co_cell(co_matrix, corpus, word_id, _, window_index, _) do
+    with window_word_id = corpus[window_index] |> Kernel.trunc() do
+      co_matrix
+      |> Matrex.set(word_id, window_word_id, co_matrix[word_id][window_word_id] + 1)
+    end
+  end
+
+  def cos_similarity(x, y, eps \\ 1.0e-8) do
+    nx = MatrexUtils.l2_normalize(x, eps)
+    ny = MatrexUtils.l2_normalize(y, eps)
+    Matrex.multiply(nx, ny)
+    |> Matrex.sum()
+  end
 end
