@@ -66,6 +66,7 @@ defmodule Util do
   end
 
   def most_similar(query, word_to_id, id_to_word, word_matrix, top \\ 5) do
+
     case Map.has_key?(word_to_id, query) do
       true  -> {:ok, _most_similar(query, word_to_id, id_to_word, word_matrix, top)}
       false -> {:error, "#{query} not found in dictionary"}
@@ -83,5 +84,51 @@ defmodule Util do
      |> Enum.sort(fn ({s1, _}, {s2, _}) -> s1 >= s2 end)
      |> Enum.take(top)
      |> Enum.each(fn {s, i} -> IO.puts("#{id_to_word[i]}: #{s}") end)
+  end
+
+  @doc """
+  Calculate 'P'ositive 'P'ointwise 'M'lutiple 'I'nformation.
+  @param verbose: Put progress on console if true.
+  @param eps: Tiny value to avoid 0 division. Do not modify this if required.
+  """
+  def ppmi(
+      co = %Matrex{data: <<rows::unsigned-integer-little-32, columns::unsigned-integer-little-32, _::binary>>},
+      verbose \\ false, eps \\ 1.0e-8) do
+    count_all_occur = Matrex.sum(co)
+    word_to_all_occur = MatrexUtils.sum(co, :rows)
+    count_total_loop = rows * columns
+
+    1..rows
+    |> Enum.map(fn row -> Enum.map(1..columns,
+      fn col ->
+        with count = row * columns + col do
+          _ppmi_cell(co, count_all_occur, word_to_all_occur, row, col, eps, verbose, count_total_loop, count)
+        end
+      end)
+    end)
+    |> Matrex.new()
+  end
+
+  def _ppmi_cell(
+        co = %Matrex{}, count_all_occur, word_to_all_occur, target_row, target_col, eps,
+        verbose, count_total_loop, count_current_loop)
+      when verbose and rem(count_current_loop, Kernel.trunc(count_total_loop / 100)) == 0 do
+    _ppmi_cell_inner(co, count_all_occur, word_to_all_occur, target_row, target_col, eps)
+    |> _ppmi_verbose(count_total_loop, count_current_loop)
+  end
+  def _ppmi_cell(
+        co = %Matrex{}, count_all_occur, word_to_all_occur, target_row, target_col, eps,
+        _, _, _) do
+    _ppmi_cell_inner(co, count_all_occur, word_to_all_occur, target_row, target_col, eps)
+  end
+  def _ppmi_cell_inner(co = %Matrex{}, count_all_occur, word_to_all_occur, target_row, target_col, eps) do
+    co[target_row][target_col] * count_all_occur / (word_to_all_occur[target_row] * word_to_all_occur[target_col])
+    |> Kernel.+(eps)
+    |> :math.log2()
+    |> max(0)
+  end
+  def _ppmi_verbose(ppmi_cell, count_total_loop, count_current_loop) do
+    IO.puts("#{100 * count_current_loop / count_total_loop} % done.")
+    ppmi_cell
   end
 end

@@ -242,4 +242,12 @@ defmodule MatrexUtils do
     |> Matrex.sum()
     |> :math.sqrt()
   end
+
+  @doc """
+  Create a matrex that has a same shape of given matrex.
+  """
+  def zeros_like(
+      %Matrex{data: <<rows::unsigned-integer-little-32, columns::unsigned-integer-little-32, _::binary>>}) do
+    Matrex.zeros(rows, columns)
+  end
 end
