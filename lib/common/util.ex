@@ -50,7 +50,7 @@ defmodule Util do
          fn (index_diff, acc) -> _create_co_cell(acc, corpus, word_id, word_index, word_index + index_diff, corpus_size) end)
   end
   defp _create_co_cell(co_matrix, _, _, word_index, window_index, corpus_size)
-       when window_index < 1 or corpus_size <= window_index or window_index == word_index, do: co_matrix
+       when window_index < 1 or corpus_size < window_index or window_index == word_index, do: co_matrix
   defp _create_co_cell(co_matrix, corpus, word_id, _, window_index, _) do
     with window_word_id = corpus[window_index] |> Kernel.trunc() do
       co_matrix
@@ -63,5 +63,25 @@ defmodule Util do
     ny = MatrexUtils.l2_normalize(y, eps)
     Matrex.multiply(nx, ny)
     |> Matrex.sum()
+  end
+
+  def most_similar(query, word_to_id, id_to_word, word_matrix, top \\ 5) do
+    case Map.has_key?(word_to_id, query) do
+      true  -> {:ok, _most_similar(query, word_to_id, id_to_word, word_matrix, top)}
+      false -> {:error, "#{query} not found in dictionary"}
+    end
+  end
+
+  defp _most_similar(query, word_to_id, id_to_word, word_matrix, top) do
+     query_id = word_to_id[query]
+     query_vec = word_matrix[query_id]
+
+     vocab_size = Map.keys(id_to_word) |> length()
+     1..vocab_size
+     |> Enum.map(fn word_index -> {cos_similarity(word_matrix[word_index], query_vec), word_index} end)
+     |> Enum.filter(fn {_, i} -> id_to_word[i] != query end)
+     |> Enum.sort(fn ({s1, _}, {s2, _}) -> s1 >= s2 end)
+     |> Enum.take(top)
+     |> Enum.each(fn {s, i} -> IO.puts("#{id_to_word[i]}: #{s}") end)
   end
 end
