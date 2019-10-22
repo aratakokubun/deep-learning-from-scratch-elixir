@@ -22,6 +22,7 @@ defmodule Deeplearning.MixProject do
   defp deps do
     [
       {:matrex, "~> 0.6.0", override: true},
+      {:matrex_utils, "~> 0.0.1", override: true},
       {:expyplot, "~> 1.2.2", override: true},
       {:earmark, "~> 1.3.2", override: true},
       {:ex_doc, "~> 0.20.2", override: true},
